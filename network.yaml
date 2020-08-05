@@ -1,0 +1,23 @@
+simulation:
+    Ts: 1
+    tSample: 100
+    nSample: 12
+neuron:
+    type:     SRMALPHA
+    theta:    10
+    tauSr:    10.0
+    tauRef:   1.0
+    scaleRef: 2     # relative to theta
+    tauRho:   1     # relative to theta #0.43429448190325176
+    scaleRho: 1
+training:
+    error:
+        type: NumSpikes #ProbSpikes #NumSpikes
+        probSlidingWin: 20  # only valid for ProbSpikes
+        tgtSpikeRegion: {start: 0, stop: 100}    # only valid for NumSpikes and ProbSpikes
+        tgtSpikeCount: {true: 70, false: 30}    # only valid for NumSpikes
+    path:
+        # out:     OutFiles/
+        in:      /media/student1/770a08ae-0a7d-4b62-bbf4-b81fdd9baf2a/train_dataset_100ms/
+        train:   /media/student1/770a08ae-0a7d-4b62-bbf4-b81fdd9baf2a/train_dataset_100ms/train.txt
+        test:    /media/student1/770a08ae-0a7d-4b62-bbf4-b81fdd9baf2a/train_dataset_100ms/test.txt
