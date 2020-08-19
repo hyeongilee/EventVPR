@@ -18,6 +18,6 @@ training:
         tgtSpikeCount: {true: 90, false: 30}    # only valid for NumSpikes
     path:
         # out:     OutFiles/
-        in:      /media/student1/770a08ae-0a7d-4b62-bbf4-b81fdd9baf2a/train_dataset_100ms_syn/
-        train:   /media/student1/770a08ae-0a7d-4b62-bbf4-b81fdd9baf2a/train_dataset_100ms_syn/train.txt
-        test:    /media/student1/770a08ae-0a7d-4b62-bbf4-b81fdd9baf2a/train_dataset_100ms_syn/test.txt
+        in:      /home/student1/hyeongilee/slayerPytorch/example/dataset/KH/train_test/
+        train:   /home/student1/hyeongilee/slayerPytorch/example/dataset/KH/train_test/train.txt
+        test:    /home/student1/hyeongilee/slayerPytorch/example/dataset/KH/train_test/test.txt
