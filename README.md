@@ -33,3 +33,20 @@
 * ms : time length for one numpy file (int)
 * threshold : upper distance limit for true data.
 * threshold2 : lower distance limit for false data.
+* aug : list for augment factor
+### make_train_dataset.ipynb
+* make training set and testing set with database and query
+* ms : time length for one numpy file (int)
+* threshold : upper distance limit for true data.
+* threshold2 : lower distance limit for false data.
+### make_train_dataset_grid.ipynb
+* make training set and testing sest for grid map classification
+* ms : time length for one numpy file (int)
+* aug : list for augment factor
+### make_train_set with_database
+* make raw training set and testing set only with database
+* ms : time length for one numpy file (int)
+### visualize.ipynb
+* visualize numpy event file
+### utc_to_unix.ipynb
+* convert gps utc time to unix time
