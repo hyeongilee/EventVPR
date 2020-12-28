@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[5]:
 
 
 import sys, os
@@ -9,10 +9,12 @@ CURRENT_TEST_DIR = os.getcwd()
 sys.path.append(CURRENT_TEST_DIR + "/../../src")
 
 
-# In[2]:
+# In[8]:
 
 
 import sys
+sys.path
+
 print(sys.version)
 
 
@@ -53,7 +55,7 @@ class nmnistDataset(Dataset):
 
         inputSpikes = snn.io.readNpSpikes(
                         self.path + str(inputIndex.item()) + '.npy'
-                        ).toSpikeTensor(torch.zeros((2,320,240,self.nTimeBins)),
+                        ).toSpikeTensor(torch.zeros((2,300,200,self.nTimeBins)),
                         samplingTime=self.samplingTime)
         desiredClass = torch.zeros((2, 1, 1, 1))
         desiredClass[classLabel,...] = 1
@@ -73,12 +75,36 @@ class Network(torch.nn.Module):
         slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.slayer = slayer
         # define network functions
-        self.conv1 = slayer.conv(2, 8, 5, stride=2, padding=1)
-        self.conv2 = slayer.conv(8, 16, 3, stride=2, padding=1)
-        self.conv3 = slayer.conv(16, 32, 3, stride=2, padding=1)
+        self.conv1 = slayer.conv(2, 8, 4, stride=2, padding=1)
+        self.conv2 = slayer.conv(8, 16, 4, stride=2, padding=1)
+        self.conv3 = slayer.conv(16, 32, 4, padding=1)
         self.pool1 = slayer.pool(2)
         self.pool2 = slayer.pool(2)
-        self.fc1   = slayer.dense((8, 8, 64), 2)
+        self.fc1   = slayer.dense((12, 18, 32), 2)
+
+    def forward(self, spikeInput):
+        spikeLayer1 = self.slayer.spike(self.conv1(self.slayer.psp(spikeInput ))) # 32, 32, 16
+        spikeLayer2 = self.slayer.spike(self.pool1(self.slayer.psp(spikeLayer1))) # 16, 16, 16
+        spikeLayer3 = self.slayer.spike(self.conv2(self.slayer.psp(spikeLayer2))) # 16, 16, 32
+        spikeLayer4 = self.slayer.spike(self.pool2(self.slayer.psp(spikeLayer3))) #  8,  8, 32
+        spikeLayer5 = self.slayer.spike(self.conv3(self.slayer.psp(spikeLayer4))) #  8,  8, 64
+        spikeOut    = self.slayer.spike(self.fc1  (self.slayer.psp(spikeLayer5))) #  10
+
+        return spikeOut
+
+class NetworkResNet(torch.nn.Module):
+    def __init__(self, netParams):
+        super(Network, self).__init__()
+        # initialize slayer
+        slayer = snn.layer(netParams['neuron'], netParams['simulation'])
+        self.slayer = slayer
+        # define network functions
+        self.conv1 = slayer.conv(2, 8, 4, stride=2, padding=1)
+        self.conv2 = slayer.conv(8, 16, 4, stride=2, padding=1)
+        self.conv3 = slayer.conv(16, 32, 4, padding=1)
+        self.pool1 = slayer.pool(2)
+        self.pool2 = slayer.pool(2)
+        self.fc1   = slayer.dense((12, 18, 32), 2)
 
     def forward(self, spikeInput):
         spikeLayer1 = self.slayer.spike(self.conv1(self.slayer.psp(spikeInput ))) # 32, 32, 16
@@ -109,20 +135,20 @@ net = torch.nn.DataParallel(Network(netParams).to(device), device_ids=deviceIds)
 error = snn.loss(netParams).to(device)
 
 # Define optimizer module.
-optimizer = torch.optim.Adam(net.parameters(), lr = 0.01, amsgrad = True)
+optimizer = torch.optim.Adam(net.parameters(), lr = 0.001, amsgrad = True)
     
 # Dataset and dataLoader instances.
 trainingSet = nmnistDataset(datasetPath =netParams['training']['path']['in'], 
                             sampleFile  =netParams['training']['path']['train'],
                             samplingTime=netParams['simulation']['Ts'],
                             sampleLength=netParams['simulation']['tSample'])
-trainLoader = DataLoader(dataset=trainingSet, batch_size=8, shuffle=False, num_workers=4)
+trainLoader = DataLoader(dataset=trainingSet, batch_size=3, shuffle=False, num_workers=2)
 
 testingSet = nmnistDataset(datasetPath  =netParams['training']['path']['in'], 
                             sampleFile  =netParams['training']['path']['test'],
                             samplingTime=netParams['simulation']['Ts'],
                             sampleLength=netParams['simulation']['tSample'])
-testLoader = DataLoader(dataset=testingSet, batch_size=8, shuffle=False, num_workers=4)
+testLoader = DataLoader(dataset=testingSet, batch_size=3, shuffle=True, num_workers=2)
 
 # Learning stats instance.
 stats = learningStats()
@@ -133,9 +159,12 @@ stats = learningStats()
 # In[8]:
 
 
-#input, target, label = trainingSet[0]
-#anim = snn.io.animTD(snn.io.spikeArrayToEvent(input.reshape((2, 320, 320, -1)).cpu().data.numpy()))
-#HTML(anim.to_jshtml())
+input, target, label = testingSet[100]
+print(target)
+print(label)
+print(input.shape)
+anim = snn.io.animTD(snn.io.spikeArrayToEvent(input.reshape((2, 300, 200, -1)).cpu().data.numpy()))
+HTML(anim.to_jshtml())
 
 
 # # Train the network
@@ -201,7 +230,19 @@ for epoch in range(100):
 
     # Update testing stats.
     stats.testing.update()
-    if epoch%10==0:  stats.print(epoch, timeElapsed=(datetime.now() - tSt).total_seconds())
+    if epoch%1==0:  stats.print(epoch, timeElapsed=(datetime.now() - tSt).total_seconds())
+
+
+# In[ ]:
+
+
+for i, (input, target, label) in enumerate(testLoader, 0):
+        input  = input.to(device)
+        target = target.to(device) 
+
+        output = net.forward(input)
+        result = snn.predict.getClass(output)
+        print(result, label)
 
 
 # ## Plot
@@ -224,4 +265,10 @@ plt.ylabel('Accuracy')
 plt.legend()
 
 plt.show()
+
+
+# In[ ]:
+
+
+
 

@@ -1,0 +1,9 @@
+import h5py
+import numpy as np
+
+f = h5py.File('/media/rcvkhu1/770a08ae-0a7d-4b62-bbf4-b81fdd9baf2a/DDD17/rec1487350455.hdf5', 'r')
+print(type(f))
+for k in f.keys():
+    print(f[k].name)
+
+f.close()
